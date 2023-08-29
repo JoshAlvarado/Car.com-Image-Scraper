@@ -4,3 +4,4 @@
 - determine interior / exterior
 - images without banners or remove banners 
 - download until # photos met
+- multiple links for multiple car code models 
