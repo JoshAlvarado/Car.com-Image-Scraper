@@ -1,13 +1,17 @@
 import torch
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import os
 import imagehash
 
 # Function to load an image from a file
 def load_image_from_file(file_path):
-    img = Image.open(file_path)
-    return img, img.size  # Return both the image and its size
-
+    try:
+        img = Image.open(file_path)
+        return img, img.size
+    except UnidentifiedImageError:
+        print(f"Error opening image file {file_path}. Deleting file.")
+        os.remove(file_path)
+        return None, (0, 0)
 
 # Function to check if an image is a duplicate
 def is_duplicate(img, hashes, hash_func, threshold=5):
@@ -21,6 +25,10 @@ def is_duplicate(img, hashes, hash_func, threshold=5):
 # Process each image for car detection and duplicate removal
 def process_image(img_path, model, hashes, hash_func, bbox_area_threshold=0.3, confidence_threshold=0.65):
     img, (width, height) = load_image_from_file(img_path)
+
+    # Skip processing if the image couldn't be opened
+    if img is None:
+        return
 
     # Check for duplicates
     if is_duplicate(img, hashes, hash_func):
@@ -56,7 +64,7 @@ def main():
 
     folder_path = r"c:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\W205"
     hashes = set()
-    hash_func = imagehash.average_hash  # You can experiment with other hashing functions
+    hash_func = imagehash.average_hash
 
     for filename in os.listdir(folder_path):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
