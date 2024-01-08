@@ -7,7 +7,7 @@ def load_image_from_file(file_path):
     img = Image.open(file_path)
     return img, img.size
 
-def process_image(img_path, model, bbox_area_threshold=0.5, confidence_threshold=0.7):
+def process_image(img_path, model, bbox_area_threshold=0.3, confidence_threshold=0.65):
     # Load image and get its size
     img, (width, height) = load_image_from_file(img_path)
 
