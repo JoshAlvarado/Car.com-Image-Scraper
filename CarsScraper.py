@@ -12,25 +12,26 @@ from urllib3.exceptions import ProtocolError
 def get_image_hash(image_content):
     return hashlib.md5(image_content).hexdigest()
 
-# Function to download an image with retries
-def download_image_with_retries(img_url, file_path, max_retries=3, delay=1):
+# Function to download an image with retries and proxy support.
+def download_image_with_retries(img_url, file_path, proxies, max_retries=3, delay=1):
     retries = 0
     while retries < max_retries:
         try:
-            response = requests.get(img_url, timeout=10)
+            proxy = proxies[retries % len(proxies)]
+            response = requests.get(img_url, timeout=10, proxies={"http": proxy, "https": proxy})
             response.raise_for_status()
             with open(file_path, 'wb') as f:
                 f.write(response.content)
             return True
         except (RequestException, ProtocolError, SocketTimeout) as e:
-            print(f"Error downloading image {img_url}: {e}")
+            print(f"Error downloading image {img_url} using proxy {proxy}: {e}")
             retries += 1
             time.sleep(delay)
     print(f"Failed to download image after {max_retries} retries: {img_url}")
     return False
 
-# Function to scrape images and save them without duplicates.
-def scrape_images(base_url, model_code, target_directory, max_images=5000):
+# Function to scrape images and save them without duplicates with proxy support.
+def scrape_images(base_url, model_code, target_directory, proxies, max_images=5000):
     downloaded_images = 0
     duplicate_images = 0
     page = 1
@@ -78,7 +79,7 @@ def scrape_images(base_url, model_code, target_directory, max_images=5000):
                 image_name = f"{listing_id}_Image_{downloaded_images}.jpg"
                 image_path = os.path.join(target_directory, image_name)
 
-                if download_image_with_retries(img_url, image_path):
+                if download_image_with_retries(img_url, image_path, proxies):
                     downloaded_images += 1
                     downloaded_hashes.add(image_hash)
 
@@ -87,8 +88,9 @@ def scrape_images(base_url, model_code, target_directory, max_images=5000):
     print(f'Total images downloaded: {downloaded_images}')
     print(f'Total duplicate images skipped: {duplicate_images}')
 
-# Example usage
+# Example usage with proxy list
 base_url = 'https://www.cars.com/shopping/results/?stock_type=used&makes[]=mercedes_benz&models[]=mercedes_benz-c_class&list_price_max=&year_min=2015&year_max=2020&mileage_max=&zip=91331&sort=best_match_desc&per_page=20'
 model_code = 'W205'
 target_directory = 'C:\\Users\\joshu\\OneDrive\\Desktop\\Car.com-Image-Scraper'
-scrape_images(base_url, model_code, target_directory)
+proxies = ['http://proxy1.example.com:port', 'http://proxy2.example.com:port']  # Add your proxy server addresses here
+scrape_images(base_url, model_code, target_directory, proxies)
