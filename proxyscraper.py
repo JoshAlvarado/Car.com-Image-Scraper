@@ -14,7 +14,7 @@ def test_proxy(proxy):
 def main():
     working_proxies = []
 
-    with open('http_proxies2.txt', 'r') as file:
+    with open('http_proxies.txt', 'r') as file:
         for line in file:
             proxy = line.strip()
             print(f"Testing proxy: {proxy}")
