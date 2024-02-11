@@ -16,9 +16,18 @@ def get_image_hash(image_content):
 
 def download_image_with_retries(img_url, file_path, proxies, max_retries=3, delay=1):
     bad_proxies = set()
-    for proxy in proxies:
+    success_proxy = None
+    attempts = 0
+
+    while attempts < max_retries:
+        proxy = success_proxy if success_proxy else proxies[0]  # Use last successful proxy or the first one if none
         if proxy in bad_proxies:
-            continue
+            proxies.remove(proxy)  # Remove bad proxy from the list
+            if not proxies:  # If no proxies are left, break out of the loop
+                break
+            success_proxy = None  # Reset success_proxy since the current one is bad
+            continue  # Skip to the next iteration to try with a new proxy
+
         print(f"Trying proxy: {proxy}")
         try:
             response = requests.get(img_url, proxies={"http": f"http://{proxy}", "https": f"http://{proxy}"}, timeout=5)
@@ -26,13 +35,20 @@ def download_image_with_retries(img_url, file_path, proxies, max_retries=3, dela
             with open(file_path, 'wb') as f:
                 f.write(response.content)
             print("Image downloaded successfully with proxy:", proxy)
+            success_proxy = proxy  # Set this proxy as the last successful one
             return True
         except RequestException as e:
             print(f"Error with proxy {proxy}: {e}")
             bad_proxies.add(proxy)
+            if success_proxy:  # If there was a successful proxy before, remove it since it's now failed
+                proxies.remove(success_proxy)
+            success_proxy = None  # Reset success_proxy since it failed
+            attempts += 1
             time.sleep(delay)
-    print(f"Failed to download image after trying all proxies: {img_url}")
+    
+    print(f"Failed to download image after {max_retries} attempts: {img_url}")
     return False
+
 
 def get_image_urls(listing_url, proxies):
     # Here's an update to use a rotating proxy for fetching listing pages
