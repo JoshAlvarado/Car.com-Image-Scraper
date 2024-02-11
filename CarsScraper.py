@@ -89,5 +89,5 @@ if __name__ == "__main__":
     base_url = 'https://www.cars.com/shopping/results/?stock_type=used&makes[]=mercedes_benz&models[]=mercedes_benz-c_class&list_price_max=&year_min=2015&year_max=2020&mileage_max=&zip=91331&sort=best_match_desc&per_page=20'
     model_code = 'W205'
     target_directory = 'C:\\Users\\joshu\\OneDrive\\Desktop\\Car.com-Image-Scraper'
-    proxies = load_proxies_from_file('httpworkingproxies.txt')
+    proxies = load_proxies_from_file('http_proxies.txt')
     scrape_images(base_url, model_code, target_directory, proxies)

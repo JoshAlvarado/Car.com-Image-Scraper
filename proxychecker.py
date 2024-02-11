@@ -10,7 +10,7 @@ def test_proxy(proxy):
     try:
         response = requests.get(test_url, proxies={"http": f"http://{proxy}", "https": f"http://{proxy}"}, timeout=5)
         if response.status_code == 200:
-            print(f"Proxy {proxy} is working.")
+            print(f"{proxy}")
             return True
     except requests.exceptions.RequestException:
         pass
