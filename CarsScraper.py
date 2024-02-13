@@ -46,6 +46,8 @@ def download_image_with_retries(img_url, file_path, proxies, max_retries=3, dela
             attempts += 1
             time.sleep(delay)
     
+        
+    
     print(f"Failed to download image after {max_retries} attempts: {img_url}")
     return False
 
@@ -61,12 +63,13 @@ def get_image_urls(listing_url, proxies):
         except RequestException:
             continue  # Try the next proxy if one fails
     return []  # Return an empty list if all proxies fail or no images are found
+    
 
 def scrape_images(base_url, model_code, target_directory, proxies, max_images=5000):
     print('Starting scraper')
     downloaded_images = 0
-    page = 1
-    downloaded_hashes = set()
+    page = 3
+    downloaded_hashes = set()  # Set to store unique hashes of downloaded images
 
     target_directory = os.path.join(target_directory, model_code)
     os.makedirs(target_directory, exist_ok=True)
@@ -74,24 +77,40 @@ def scrape_images(base_url, model_code, target_directory, proxies, max_images=50
     while downloaded_images < max_images:
         current_url = f"{base_url}&page={page}"
         print(f"Fetching URL: {current_url}")
-        search_page_response = requests.get(current_url, timeout=5)  # Consider using proxies here as well
+        search_page_response = requests.get(current_url, timeout=5)
         if search_page_response.status_code == 200:
             search_page_soup = BeautifulSoup(search_page_response.content, 'html.parser')
             listing_links = [urljoin(current_url, a['href']) for a in search_page_soup.select('a.vehicle-card-link[href]')]
             for listing_url in listing_links:
+                listing_id = listing_url.split('/')[-2]
+                # Check if any image for this listing already exists
+                existing_images = [img for img in os.listdir(target_directory) if img.startswith(listing_id)]
+                if existing_images:
+                    print(f"Images for listing {listing_id} already exist, skipping entire listing.")
+                    continue  # Skip to the next listing
+
                 print(f"Accessing listing: {listing_url}")
                 image_urls = get_image_urls(listing_url, proxies)
                 for img_url in image_urls:
-                    image_hash = get_image_hash(requests.get(img_url).content)
-                    if image_hash in downloaded_hashes:
-                        continue
-                    image_name = f"{image_hash}.jpg"
-                    image_path = os.path.join(target_directory, image_name)
-                    if download_image_with_retries(img_url, image_path, proxies):
+                    try:
+                        img_response = requests.get(img_url, timeout=5)
+                        img_response.raise_for_status()
+                        image_hash = get_image_hash(img_response.content)
+                        if image_hash in downloaded_hashes:
+                            print(f"Duplicate image detected by hash, skipping: {img_url}")
+                            continue  # Skip this image
+                        image_name = f"{listing_id}_{len(existing_images) + 1}.jpg"
+                        image_path = os.path.join(target_directory, image_name)
+                        with open(image_path, 'wb') as f:
+                            f.write(img_response.content)
                         downloaded_images += 1
                         downloaded_hashes.add(image_hash)
+                        existing_images.append(image_name)  # Update the list to reflect the newly downloaded image
+                        print(f"Downloaded {image_name}")
                         if downloaded_images >= max_images:
                             break
+                    except RequestException as e:
+                        print(f"Failed to download image: {e}")
         else:
             print(f"Failed to fetch search page: {current_url}")
         page += 1
@@ -102,7 +121,7 @@ def scrape_images(base_url, model_code, target_directory, proxies, max_images=50
 
 if __name__ == "__main__":
     print("Starting the scraper")
-    base_url = 'https://www.cars.com/shopping/results/?stock_type=used&makes[]=mercedes_benz&models[]=mercedes_benz-c_class&list_price_max=&year_min=2015&year_max=2020&mileage_max=&zip=91331&sort=best_match_desc&per_page=20'
+    base_url = 'https://www.cars.com/shopping/results/?dealer_id=&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=best_match_desc&stock_type=used&year_max=2020&year_min=2015&zip=91331'
     model_code = 'W205'
     target_directory = 'C:\\Users\\joshu\\OneDrive\\Desktop\\Car.com-Image-Scraper'
     proxies = load_proxies_from_file('http_proxies.txt')
