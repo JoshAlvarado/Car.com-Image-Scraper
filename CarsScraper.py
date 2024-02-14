@@ -68,7 +68,7 @@ def get_image_urls(listing_url, proxies):
 def scrape_images(base_url, model_code, target_directory, proxies, max_images=5000):
     print('Starting scraper')
     downloaded_images = 0
-    page = 3
+    page = 6
     downloaded_hashes = set()  # Set to store unique hashes of downloaded images
 
     target_directory = os.path.join(target_directory, model_code)
