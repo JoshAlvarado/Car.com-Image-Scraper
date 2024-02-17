@@ -65,10 +65,10 @@ def get_image_urls(listing_url, proxies):
     return []  # Return an empty list if all proxies fail or no images are found
     
 
-def scrape_images(base_url, model_code, target_directory, proxies, max_images=5000):
+def scrape_images(base_url, model_code, target_directory, proxies, max_images=15000):
     print('Starting scraper')
     downloaded_images = 0
-    page = 6
+    page = 7
     downloaded_hashes = set()  # Set to store unique hashes of downloaded images
 
     target_directory = os.path.join(target_directory, model_code)

@@ -1,15 +1,18 @@
 import torch
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, UnidentifiedImageError, ImageFile
 import os
 import imagehash
+
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 # Function to load an image from a file
 def load_image_from_file(file_path):
     try:
         img = Image.open(file_path)
+        img.load()  # Ensure the image is fully loaded
         return img, img.size
-    except UnidentifiedImageError:
-        print(f"Error opening image file {file_path}. Deleting file.")
+    except (UnidentifiedImageError, OSError) as e:
+        print(f"Error opening or loading image file {file_path}: {e}. Deleting file.")
         os.remove(file_path)
         return None, (0, 0)
 
@@ -62,7 +65,7 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device).eval()
 
-    folder_path = r"c:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\W205"
+    folder_path = r"C:\Users\joshu\OneDrive\Desktop\car pics\W205"
     hashes = set()
     hash_func = imagehash.average_hash
 
