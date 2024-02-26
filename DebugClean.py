@@ -13,7 +13,7 @@ def main():
     model.to(device).eval()
 
     # Load image from local file
-    img_path = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\Debugging\75e673ee-d25e-4968-ab31-c4e95344d4c6_2.jpg"
+    img_path = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\W205\33d25378-5417-4dd4-9b58-4c8c005fc72e_2.jpg"
     img, (width, height) = load_image_from_file(img_path)
 
     # Perform detection

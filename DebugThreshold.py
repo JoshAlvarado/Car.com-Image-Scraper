@@ -43,7 +43,8 @@ def main():
                 bbox_ratio = bbox_area / img_area
 
                 # Check for car detections with confidence between 0.60 and 0.65 and bbox area over 30% of the image
-                if 0.60 <= conf <= 0.65 and bbox_ratio >= 0.3:
+                #if 0.60 <= conf <= 0.65 and bbox_ratio >= 0.3:
+                if 0.60 <= conf and 0.20 <= bbox_ratio <= 0.30:
                     # Copy this image to the target directory
                     shutil.copy(img_path, os.path.join(target_dir, img_file))
                     
