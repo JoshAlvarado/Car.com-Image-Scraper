@@ -1,4 +1,5 @@
 # Car.com Image Scraper
+Joshua Alvarado
 
 ## Overview
 The Car.com Image Scraper is a dedicated tool designed to automate the collection of vehicle images from various listings on cars.com. This tool is specifically tailored to gather a diverse dataset for training machine learning models capable of identifying and classifying vehicles by their model codes. It supports features like filtering by interior/exterior images, removing duplicates, and ensuring high-quality images without banners.
