@@ -1,3 +1,6 @@
+##
+## copies images with car detections that meet specific confidence and bounding box area criteria to a target directory, stopping after finding 100 matches.
+##
 import torch
 from PIL import Image, UnidentifiedImageError
 import os

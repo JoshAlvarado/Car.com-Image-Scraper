@@ -1,3 +1,6 @@
+##
+##DEBUGCLEAN.PY FOR GETTING INFORMATION ON SINGLE PICTURES.
+##
 import torch
 from PIL import Image
 
