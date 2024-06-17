@@ -11,7 +11,7 @@ def main():
     model.to(device).eval()
 
     source_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\W205"
-    target_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\Debugging3"
+    target_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\Debugging1"
     cleaned_dir = os.path.join(target_dir, 'cleaned')
     discarded_dir = os.path.join(target_dir, 'discarded')
 
@@ -51,7 +51,7 @@ def main():
                 bbox_ratio = bbox_area / img_area
 
                 # Check for car detections with confidence and bbox area criteria
-                if 0.60 <= conf and 0.20 <= bbox_ratio <= 0.50:
+                if 0.60 <= conf and 0.20 <= bbox_ratio:
                     # Copy this image to the cleaned directory
                     shutil.copy(img_path, os.path.join(cleaned_dir, img_file))
                     is_cleaned = True
