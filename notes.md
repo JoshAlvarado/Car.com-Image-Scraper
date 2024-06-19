@@ -1,3 +1,10 @@
+# June 18, 2024, 10:35 PM (PDT)
+## Progress and Findings:
+
+Today, I continued my research and debugging of the data cleaning process. I came up with the idea of using a hyperparameter optimization algorithm to determine the optimal confidence and bounding box (bbox) ratio thresholds. To implement this, I created two folders: one containing images that I handpicked as suitable for training the model, and another with images that I deemed unsuitable.
+
+The plan is to run the algorithm to adjust the parameters and evaluate which configuration yields the best classification accuracy. This process will help automate the parameter tuning, ensuring that the model is trained with the highest quality data. I aim to complete this process by tomorrow.
+
 # June 17, 2024, 6:45 PM (PDT)
 ## Progress and Findings:
 
