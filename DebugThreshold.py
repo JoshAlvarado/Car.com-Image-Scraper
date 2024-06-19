@@ -11,7 +11,7 @@ def main():
     model.to(device).eval()
 
     source_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\W205"
-    target_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\Debuggingbelow20box"
+    target_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\debugginghyperP"
     cleaned_dir = os.path.join(target_dir, 'cleaned')
     discarded_dir = os.path.join(target_dir, 'discarded')
 
@@ -59,12 +59,12 @@ def main():
             bbox_ratio = largest_bbox_area / img_area
 
             # Debug print statements to check the values
-            print(f"Processing file: {img_file}")
-            print(f"Largest Confidence: {largest_conf}, BBox ratio: {bbox_ratio}")
-            print(f"Largest BBox area: {largest_bbox_area}, Image area: {img_area}")
+            # print(f"Processing file: {img_file}")
+            # print(f"Largest Confidence: {largest_conf}, BBox ratio: {bbox_ratio}")
+            # print(f"Largest BBox area: {largest_bbox_area}, Image area: {img_area}")
 
             # Check for car detections with confidence and bbox area criteria
-            if largest_conf >= 0.60 and bbox_ratio <= 0.20:
+            if largest_conf >= 0.60 and .15 <= bbox_ratio <= 0.85:
                 # Copy this image to the cleaned directory
                 shutil.copy(img_path, os.path.join(cleaned_dir, img_file))
                 matches_found += 1
