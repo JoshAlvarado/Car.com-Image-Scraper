@@ -1,3 +1,11 @@
+# June 20, 2024, 11:27 PM (PDT)
+## Progress and Findings:
+
+Today, I continued my research and debugging of the data cleaning process. I've been experimenting with different approaches to applying hyperparameter optimization. Currently, I'm using Optuna to fine-tune and understand the best results for my model.
+
+I created two folders: one containing images that I handpicked as suitable for training the model, and another with images that are not suitable. The plan is to run Optuna to adjust the parameters and evaluate which configuration yields the best classification accuracy. This iterative process is helping to automate the parameter tuning and ensure the highest quality data is used for training.
+
+
 # June 18, 2024, 10:35 PM (PDT)
 ## Progress and Findings:
 
