@@ -22,13 +22,13 @@ color_names = [
 ]
 
 def main():
-    # Load the model from the official YOLOv5 repository
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+    # Load the model from the official YOLOv8 repository
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True, trust_repo=True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device).eval()
 
     # Load image from local file
-    img_path = r"c:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\debugginghyperP\discarded\09e7f170-6460-4db3-bc24-26c6b898c20e_6.jpg"
+    img_path = r"c:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\optuna\Good\fea7095a-1b92-400a-8a1d-dd5fa9bd9a86_4.jpg"
     img, (width, height) = load_image_from_file(img_path)
 
     # Perform detection

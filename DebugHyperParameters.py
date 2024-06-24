@@ -4,9 +4,8 @@ import os
 import shutil
 import optuna
 
-def process_images(conf_threshold, bbox_ratio_threshold, good_dir, bad_dir):
-    # Load the model
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+def process_images(conf_threshold, bbox_ratio_min, bbox_ratio_max, good_dir, bad_dir):
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True, trust_repo=True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device).eval()
 
@@ -20,12 +19,9 @@ def process_images(conf_threshold, bbox_ratio_threshold, good_dir, bad_dir):
                 img = Image.open(img_path).convert("RGB")
             except UnidentifiedImageError:
                 print(f"Skipping file due to error opening: {img_file}")
-                continue  # Skip this file and continue with the next one
+                continue
 
-            # Perform detection
             results = model(img, size=640)
-
-            # Initialize variable to track the largest box
             largest_bbox_area = 0
             largest_conf = 0
 
@@ -33,7 +29,6 @@ def process_images(conf_threshold, bbox_ratio_threshold, good_dir, bad_dir):
                 if results.names[int(cls)] == 'car':
                     x1, y1, x2, y2 = box
                     bbox_area = (x2 - x1) * (y2 - y1)
-
                     if bbox_area > largest_bbox_area:
                         largest_bbox_area = bbox_area
                         largest_conf = conf
@@ -42,8 +37,7 @@ def process_images(conf_threshold, bbox_ratio_threshold, good_dir, bad_dir):
                 img_area = img.width * img.height
                 bbox_ratio = largest_bbox_area / img_area
 
-                # Check for car detections with confidence and bbox area criteria
-                if largest_conf >= conf_threshold and bbox_ratio >= bbox_ratio_threshold:
+                if largest_conf >= conf_threshold and bbox_ratio_min <= bbox_ratio <= bbox_ratio_max:
                     if expected_good:
                         correct += 1
                 else:
@@ -61,27 +55,42 @@ def process_images(conf_threshold, bbox_ratio_threshold, good_dir, bad_dir):
     total_images = good_total + bad_total
 
     accuracy = total_correct / total_images if total_images > 0 else 0
-
     return accuracy
 
 def objective(trial):
-    # Define the hyperparameters to tune
-    conf_threshold = trial.suggest_float('conf_threshold', 0.3, 0.99)
-    bbox_ratio_threshold = trial.suggest_float('bbox_ratio_threshold', 0.1, 0.89)
-    
-    # Directories containing good and bad photos
+    conf_threshold = trial.suggest_uniform('conf_threshold', 0.3, 0.99)
+    bbox_ratio_min = trial.suggest_uniform('bbox_ratio_min', 0.1, 0.4)
+    bbox_ratio_max = trial.suggest_uniform('bbox_ratio_max', 0.5, 0.9)
+
     good_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\optuna\Good"
     bad_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\optuna\Bad"
 
-    accuracy = process_images(conf_threshold, bbox_ratio_threshold, good_dir, bad_dir)
-    
-    # Define a metric to maximize (e.g., the accuracy of classification)
+    accuracy = process_images(conf_threshold, bbox_ratio_min, bbox_ratio_max, good_dir, bad_dir)
     return accuracy
 
-study = optuna.create_study(direction='maximize')
-study.optimize(objective, n_trials=50)
+def main():
+    study = optuna.create_study(direction='maximize')
+    study.optimize(objective, n_trials=200)
 
-print('Best trial:')
-trial = study.best_trial
-print(f'  Value: {trial.value}')
-print(f'  Params: {trial.params}')
+    print('Best trial:')
+    trial = study.best_trial
+    print(f'  Value: {trial.value}')
+    print(f'  Params: {trial.params}')
+
+    conf_threshold = trial.params['conf_threshold']
+    bbox_ratio_min = trial.params['bbox_ratio_min']
+    bbox_ratio_max = trial.params['bbox_ratio_max']
+
+    source_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\W205"
+    cleaned_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\debugginghyperP\cleaned"
+    discarded_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\debugginghyperP\discarded"
+
+    if not os.path.exists(cleaned_dir):
+        os.makedirs(cleaned_dir)
+    if not os.path.exists(discarded_dir):
+        os.makedirs(discarded_dir)
+
+    process_images(conf_threshold, bbox_ratio_min, bbox_ratio_max, source_dir, cleaned_dir, discarded_dir)
+
+if __name__ == "__main__":
+    main()

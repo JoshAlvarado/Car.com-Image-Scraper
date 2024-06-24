@@ -1,3 +1,11 @@
+# June 23, 2024, 7:00 AM (PDT)
+## Progress and Findings:
+
+Today, I updated the YOLO model I was using from YOLOv5s to YOLOv5x, which has significantly better accuracy for detecting cars. I've definitely noticed an improvement when debugging the parameters. Additionally, I'm increasing the number of images in my "bad" and "good" folders and raising the number of tests conducted from 50 to a higher count for better parameter optimization.
+
+I'm also continuing to read about the differences between YOLOv5 and YOLOv8. I've set the Optuna trials to 200, and it is expected to take approximately 10 hours. My next step in the project is to apply these optimized parameters to my raw dataset to create a clean dataset.
+
+
 # June 20, 2024, 11:27 PM (PDT)
 ## Progress and Findings:
 
