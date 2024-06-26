@@ -1,3 +1,11 @@
+# June 25, 2024, 9:39 PM (PDT)
+## Progress and Findings:
+
+Today, I continued debugging the parameters. I am extremely satisfied with the images classified as "good" and those considered "bad" for discarding. However, I noticed that YOLO sometimes detects objects like steering wheels, resulting in uneven bounding boxes. This is because YOLO recognizes a car regardless of whether the image is of the interior or exterior.
+
+To address this, I am considering implementing a method to verify whether the bounding box could represent a car based on its dimensions. For example, if the bounding box is longer vertically than horizontally, it is unlikely to be a car. My next goal is to explore this approach further and hopefully proceed with cleaning the database. I also plan to start researching the next steps after cleaning the dataset, possibly delving into synthetic data.
+
+
 # June 23, 2024, 7:00 AM (PDT)
 ## Progress and Findings:
 

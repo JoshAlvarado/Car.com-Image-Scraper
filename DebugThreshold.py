@@ -6,12 +6,12 @@ import random  # For randomizing image selection
 
 def main():
     # Load the model
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device).eval()
 
     source_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\W205"
-    target_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\debuggingParameterslowconf"
+    target_dir = r"C:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\debugging5xnewparams"
     cleaned_dir = os.path.join(target_dir, 'cleaned')
     discarded_dir = os.path.join(target_dir, 'discarded')
 
@@ -64,7 +64,7 @@ def main():
             # print(f"Largest BBox area: {largest_bbox_area}, Image area: {img_area}")
 
             # Check for car detections with confidence and bbox area criteria
-            if largest_conf >= 0.30 and .15 <= bbox_ratio <= 0.87:
+            if largest_conf >= 0.6344329465511213 and 0.21079383385951747 <= bbox_ratio <= 0.8953098474641866:
                 # Copy this image to the cleaned directory
                 shutil.copy(img_path, os.path.join(cleaned_dir, img_file))
                 matches_found += 1
