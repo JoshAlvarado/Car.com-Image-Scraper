@@ -28,7 +28,7 @@ def main():
     model.to(device).eval()
 
     # Load image from local file
-    img_path = r"c:\Users\joshu\OneDrive\Desktop\Car.com-Image-Scraper\debugging5xnewparams\cleaned\f71883c5-b093-4775-8e76-4a7e80e8e2ff_29.jpg"
+    img_path = r"debugging5xnewparams/discarded/bf387146-8691-4c15-91c7-f861247f0ab7_3.jpg"
     img, (width, height) = load_image_from_file(img_path)
 
     # Perform detection
@@ -41,6 +41,9 @@ def main():
     # Define a font
     font = ImageFont.load_default()
 
+    # Separate index for car detections
+    car_index = 1
+
     # Filter for cars and print results
     for i, (*box, conf, cls) in enumerate(results.xyxy[0]):
         if results.names[int(cls)] == 'car':
@@ -49,7 +52,7 @@ def main():
             largest_box_area = max(largest_box_area, box_area)
 
             # Assign a distinct color to the box
-            color_name, box_color = color_names[i % len(color_names)]
+            color_name, box_color = color_names[car_index % len(color_names)]
             img_draw.rectangle([x1, y1, x2, y2], outline=box_color, width=2)
 
             # Calculate the percentage of the image occupied by the box
@@ -69,13 +72,15 @@ def main():
             img_draw.rectangle([text_position, (x1 + text_width, y1)], fill=box_color)
             img_draw.text(text_position, text, fill="black", font=font)
 
-            print(f"Car {i+1}:")
+            print(f"Car {car_index}:")
             print(f"  Box coordinates: ({x1}, {y1}), ({x2}, {y2})")
             print(f"  Confidence: {conf:.2f}")
             print(f"  Box area: {box_area} pixels")
             print(f"  Box color: {color_name}")
             print(f"  Occupies {occupied_percentage:.2f}% of the image.")
             print("")
+
+            car_index += 1
 
     # Display results
     img.show()  # or .save(), .print(), etc.
