@@ -2,6 +2,7 @@ import torch
 from PIL import Image, UnidentifiedImageError, ImageFile
 import os
 import imagehash
+import time
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -26,7 +27,7 @@ def is_duplicate(img, hashes, hash_func, threshold=5):
     return False
 
 # Process each image for car detection and duplicate removal
-def process_image(img_path, model, hashes, hash_func, bbox_area_threshold=0.3, confidence_threshold=0.65):
+def process_image(img_path, model, hashes, hash_func, conf_threshold, bbox_ratio_min, bbox_ratio_max):
     img, (width, height) = load_image_from_file(img_path)
 
     # Skip processing if the image couldn't be opened
@@ -42,26 +43,34 @@ def process_image(img_path, model, hashes, hash_func, bbox_area_threshold=0.3, c
     # Perform detection
     results = model(img)
 
-    large_car_detected = False
+    largest_bbox_area = 0
+    largest_conf = 0
+
     for *box, conf, cls in results.xyxy[0]:
-        if results.names[int(cls)] == 'car' and conf > confidence_threshold:
-            x1, y1, x2, y2 = box
+        if results.names[int(cls)] == 'car':
+            x1, y1, x2, y2 = [int(coord.item()) for coord in box]
             bbox_area = (x2 - x1) * (y2 - y1)
-            img_area = width * height
-            bbox_ratio = bbox_area / img_area
 
-            if bbox_ratio > bbox_area_threshold:
-                print(f"Large car detected in {os.path.basename(img_path)} with confidence {conf}")
-                large_car_detected = True
-                break
+            if bbox_area > largest_bbox_area:
+                largest_bbox_area = bbox_area
+                largest_conf = conf
 
-    # If a large car is not detected, delete the image file
-    if not large_car_detected:
-        print(f"No large car detected in {os.path.basename(img_path)}. Deleting image.")
-        os.remove(img_path)
+    if largest_bbox_area > 0:
+        img_area = width * height
+        bbox_ratio = largest_bbox_area / img_area
+
+        if largest_conf >= conf_threshold and bbox_ratio_min <= bbox_ratio <= bbox_ratio_max:
+            print(f"Large car detected in {os.path.basename(img_path)} with confidence {largest_conf:.2f}")
+            return  # Keep the image
+
+    # If the largest bounding box does not meet the criteria, delete the image file
+    print(f"No large car detected in {os.path.basename(img_path)}. Deleting image.")
+    os.remove(img_path)
 
 def main():
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+    start_time = time.time()
+
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5x', pretrained=True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device).eval()
 
@@ -69,10 +78,27 @@ def main():
     hashes = set()
     hash_func = imagehash.average_hash
 
+    # Parameters from the hyperparameter optimization
+    conf_threshold = 0.63  # Rounded to two decimal places
+    bbox_ratio_min = 0.21  # Rounded to two decimal places
+    bbox_ratio_max = 0.90  # Rounded to two decimal places
+
+    total_images = len([f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
+    processed_images = 0
+
     for filename in os.listdir(folder_path):
         if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
             img_path = os.path.join(folder_path, filename)
-            process_image(img_path, model, hashes, hash_func)
+            process_image(img_path, model, hashes, hash_func, conf_threshold, bbox_ratio_min, bbox_ratio_max)
+            processed_images += 1
+
+            if processed_images % 1000 == 0:
+                percentage_done = (processed_images / total_images) * 100
+                print(f"{percentage_done:.2f}% done. {processed_images} out of {total_images} images processed.")
+
+    end_time = time.time()
+    total_time = end_time - start_time
+    print(f"Total time taken: {total_time:.2f} seconds")
 
 if __name__ == "__main__":
     main()
