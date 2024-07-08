@@ -1,3 +1,18 @@
+# July 8, 2024, 12:38 AM (PDT)
+## Progress and Findings:
+
+Today, I finally cleaned the dataset. I found that the parameters provided by the hyperparameter optimization script were robust enough to automate the process effectively. In a folder of 1,000 random images pulled from the original dataset, only about 10 were car doors, while the rest were correctly classified as good images. Based on these results, I decided to clean the entire dataset using these parameters.
+
+Here are the final statistics from the cleaning script:
+
+- **Total time taken:** 18,862.99 seconds
+- **Total images processed:** 45,192
+- **Images kept:** 7,204
+- **Duplicate images deleted:** 11,935
+- **Unloadable images deleted:** 44
+- **Images deleted for not meeting criteria:** 26,009
+
+
 # June 25, 2024, 9:39 PM (PDT)
 ## Progress and Findings:
 
