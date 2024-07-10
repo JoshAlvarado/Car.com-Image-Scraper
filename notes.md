@@ -1,3 +1,13 @@
+# July 9, 2024, 6:37 PM (PDT)
+## Progress and Findings:
+
+Today, I began manually reviewing the 7,000 images identified as "good" and deleting any that are not of the W205 model or those that slipped through the initial filtering. This process is time-consuming, but I am confident it will result in a better quality dataset for model training. 
+
+By refining the dataset to only include relevant images, I aim to improve the model's accuracy and performance. This meticulous effort is crucial for ensuring that the model is trained on the most accurate and representative data. 
+
+My next steps involve finalizing this manual review and then proceeding with training the model. Additionally, I plan to explore the potential use of synthetic data to further enhance the dataset.
+
+
 # July 8, 2024, 12:38 AM (PDT)
 ## Progress and Findings:
 
