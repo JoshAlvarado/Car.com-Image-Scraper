@@ -121,8 +121,8 @@ def scrape_images(base_url, model_code, target_directory, proxies, max_images=15
 
 if __name__ == "__main__":
     print("Starting the scraper")
-    base_url = 'https://www.cars.com/shopping/results/?dealer_id=&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=best_match_desc&stock_type=used&year_max=2020&year_min=2015&zip=91331'
-    model_code = 'W205'
+    base_url = 'https://www.cars.com/shopping/results/?dealer_id=&door_counts[]=4&include_shippable=true&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=list_price_desc&stock_type=all&trims[]=mercedes_benz-c_class-c_250&trims[]=mercedes_benz-c_class-c_250_luxury&trims[]=mercedes_benz-c_class-c_250_sport&trims[]=mercedes_benz-c_class-c_300&trims[]=mercedes_benz-c_class-c_300_4matic&trims[]=mercedes_benz-c_class-c_300_4matic_luxury&trims[]=mercedes_benz-c_class-c_300_4matic_sport&trims[]=mercedes_benz-c_class-c_300_sport&trims[]=mercedes_benz-c_class-c_350&year_max=2014&year_min=2007&zip=91331'
+    model_code = 'W204'
     target_directory = 'C:\\Users\\joshu\\OneDrive\\Desktop\\Car.com-Image-Scraper'
     proxies = load_proxies_from_file('http_proxies.txt')
     scrape_images(base_url, model_code, target_directory, proxies)
