@@ -71,7 +71,7 @@ def download_images(url, save_directory, proxies, proxy_cycle, image_count):
                 print(f"Media count for listing {car_id}: {media_count}")
                 
                 # Skip listing if media count is 3 or below
-                if (media_count is None) or media_count <= 3:
+                if (media_count is None) or media_count <= 5:
                     print(f"Skipping listing {car_id} due to low media count ({media_count} images).")
                     return image_count
             else:
@@ -139,7 +139,7 @@ def main():
     # Variable for the car type, which will be used to create the subfolder
     car_type = 'w204'  # Change this value for different car types (e.g., 'w205', 'w204', etc.)
     
-    base_url = "https://www.cars.com/shopping/results/?dealer_id=&door_counts[]=4&include_shippable=true&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=list_price&stock_type=all&trims[]=mercedes_benz-c_class-c_300&trims[]=mercedes_benz-c_class-c_300_4matic&year_max=&year_min=2022&zip=91331"
+    base_url = "https://www.cars.com/shopping/results/?dealer_id=&door_counts[]=4&include_shippable=true&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=list_price_desc&stock_type=all&trims[]=mercedes_benz-c_class-c_300&trims[]=mercedes_benz-c_class-c_300_4matic&year_max=&year_min=2022&zip=91331"
 
     # Define the save directory, including the car type subfolder
     base_directory = os.path.dirname(os.path.abspath(__file__))  # Base directory where the script is located
