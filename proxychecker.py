@@ -1,31 +1,57 @@
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import time
+import urllib3
 
-def load_proxies_from_file(file_path):
-    with open(file_path, 'r') as file:
-        proxies = [line.strip() for line in file.readlines()]
-    return proxies
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def test_proxy(proxy):
-    test_url = 'https://www.cars.com/shopping/results/?stock_type=used&makes[]=mercedes_benz&models[]=mercedes_benz-c_class&list_price_max=&year_min=2015&year_max=2020&mileage_max=&zip=91331&sort=best_match_desc&per_page=20'
+def check_proxy(proxy):
+    url = "https://www.cars.com/"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
+    proxies = {
+        'http': f'http://{proxy}',
+        'https': f'http://{proxy}'
+    }
     try:
-        response = requests.get(test_url, proxies={"http": f"http://{proxy}", "https": f"http://{proxy}"}, timeout=5)
+        print(f"Testing proxy: {proxy}")
+        response = requests.get(url, proxies=proxies, headers=headers, timeout=20, verify=False)
+        print(f"Response status code: {response.status_code}")
+        print(f"Response content length: {len(response.text)}")
         if response.status_code == 200:
-            print(f"{proxy}")
-            return True
-    except requests.exceptions.RequestException:
-        pass
-    return False
+            if "cars.com" in response.text.lower():
+                print(f"Proxy {proxy} is working and returned the expected content.")
+                return proxy
+            else:
+                print(f"Proxy {proxy} returned a 200 status, but the expected content was not found.")
+        else:
+            print(f"Proxy {proxy} returned a non-200 status code.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error with proxy {proxy}: {str(e)}")
+    return None
 
-def save_working_proxies(proxies, output_file):
-    for proxy in proxies:
-        if test_proxy(proxy):
-            with open(output_file, 'a') as file:  # Open file in append mode
-                file.write(proxy + '\n')
+def main():
+    with open('proxy.txt', 'r') as f:
+        proxies = f.read().splitlines()
+
+    print(f"Total proxies to check: {len(proxies)}")
+
+    working_proxies = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_proxy = {executor.submit(check_proxy, proxy): proxy for proxy in proxies}
+        for future in as_completed(future_to_proxy):
+            result = future.result()
+            if result:
+                working_proxies.append(result)
+                print(f"Working proxy found: {result}")
+
+    with open('workingproxy.txt', 'w') as f:
+        for proxy in working_proxies:
+            f.write(f"{proxy}\n")
+
+    print(f"Total working proxies: {len(working_proxies)}")
 
 if __name__ == "__main__":
-    proxy_file = 'C:/Users/joshu/OneDrive/Desktop/Car.com-Image-Scraper/http_proxies.txt'
-    output_file = 'C:/Users/joshu/OneDrive/Desktop/Car.com-Image-Scraper/httpworkingproxies.txt'
-    # Ensure the output file is empty before starting
-    open(output_file, 'w').close()
-    proxies = load_proxies_from_file(proxy_file)
-    save_working_proxies(proxies, output_file)
+    main()

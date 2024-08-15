@@ -1,128 +1,177 @@
 import requests
 from bs4 import BeautifulSoup
 import os
-import hashlib
 import time
-from urllib.parse import urljoin
-from requests.exceptions import RequestException
+import re
+import urllib3
+import itertools
+import random
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
-def load_proxies_from_file(file_path='http_proxies.txt'):
-    with open(file_path, 'r') as file:
-        proxies = [line.strip() for line in file.readlines()]
-    return proxies
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def get_image_hash(image_content):
-    return hashlib.md5(image_content).hexdigest()
+def get_proxies():
+    with open('workingproxy.txt', 'r') as f:
+        return f.read().splitlines()
 
-def download_image_with_retries(img_url, file_path, proxies, max_retries=3, delay=1):
-    bad_proxies = set()
-    success_proxy = None
+def try_request(url, headers, proxy=None):
+    proxies = {'http': f'http://{proxy}', 'https': f'http://{proxy}'} if proxy else None
+    try:
+        response = requests.get(url, headers=headers, proxies=proxies, verify=False, timeout=20)
+        response.raise_for_status()
+        return response
+    except requests.RequestException as e:
+        print(f"Error with proxy {proxy}: {str(e)}" if proxy else "Error without proxy.")
+        return None
+
+def get_listings(url, proxies, proxy_cycle):
+    print(f"Fetching listings from page: {url}")
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
     attempts = 0
+    while attempts < len(proxies) + 1:  # +1 for the final non-proxy attempt
+        proxy = next(proxy_cycle)
+        response = try_request(url, headers, proxy)
+        if response and response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            listings = soup.find_all('a', class_='vehicle-card-link js-gallery-click-link')
+            if listings:
+                print(f"Found {len(listings)} listings using proxy {proxy}.")
+                return [f"https://www.cars.com{listing['href']}" for listing in listings]
+            else:
+                print(f"No listings found with proxy {proxy}.")
+        attempts += 1
+    return []
 
-    while attempts < max_retries:
-        proxy = success_proxy if success_proxy else proxies[0]  # Use last successful proxy or the first one if none
-        if proxy in bad_proxies:
-            proxies.remove(proxy)  # Remove bad proxy from the list
-            if not proxies:  # If no proxies are left, break out of the loop
-                break
-            success_proxy = None  # Reset success_proxy since the current one is bad
-            continue  # Skip to the next iteration to try with a new proxy
-
-        print(f"Trying proxy: {proxy}")
-        try:
-            response = requests.get(img_url, proxies={"http": f"http://{proxy}", "https": f"http://{proxy}"}, timeout=5)
-            response.raise_for_status()
-            with open(file_path, 'wb') as f:
-                f.write(response.content)
-            print("Image downloaded successfully with proxy:", proxy)
-            success_proxy = proxy  # Set this proxy as the last successful one
-            return True
-        except RequestException as e:
-            print(f"Error with proxy {proxy}: {e}")
-            bad_proxies.add(proxy)
-            if success_proxy:  # If there was a successful proxy before, remove it since it's now failed
-                proxies.remove(success_proxy)
-            success_proxy = None  # Reset success_proxy since it failed
-            attempts += 1
-            time.sleep(delay)
+def download_images(url, save_directory, proxies, proxy_cycle, image_count):
+    car_id = url.split('/')[-2]
+    print(f"Processing listing with ID: {car_id}")
     
-        
-    
-    print(f"Failed to download image after {max_retries} attempts: {img_url}")
-    return False
+    # Check if images for this listing ID already exist
+    if any(fname.startswith(car_id) for fname in os.listdir(save_directory)):
+        print(f"Images for listing ID {car_id} already exist. Skipping.")
+        return image_count
 
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    }
 
-def get_image_urls(listing_url, proxies):
-    # Here's an update to use a rotating proxy for fetching listing pages
-    for proxy in proxies:
-        try:
-            response = requests.get(listing_url, proxies={"http": f"http://{proxy}", "https": f"http://{proxy}"}, timeout=5)
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.content, 'html.parser')
-                return [img['src'] for img in soup.find_all('img') if 'src' in img.attrs and 'swipe-main-image' in img.attrs.get('class', '')]
-        except RequestException:
-            continue  # Try the next proxy if one fails
-    return []  # Return an empty list if all proxies fail or no images are found
-    
+    max_retries = 3
+    for attempt in range(max_retries):
+        proxy = next(proxy_cycle)
+        response = try_request(url, headers, proxy)
+        if response and response.status_code == 200:
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            vdp_gallery = soup.find('vdp-gallery')
+            if vdp_gallery and 'media-count' in vdp_gallery.attrs:
+                media_count = int(vdp_gallery['media-count'])
+                print(f"Media count for listing {car_id}: {media_count}")
+                
+                # Skip listing if media count is 3 or below
+                if (media_count is None) or media_count <= 3:
+                    print(f"Skipping listing {car_id} due to low media count ({media_count} images).")
+                    return image_count
+            else:
+                print(f"Couldn't find media count for listing {car_id}. Skipping.")
+                return image_count
 
-def scrape_images(base_url, model_code, target_directory, proxies, max_images=15000):
-    print('Starting scraper')
-    downloaded_images = 0
-    page = 7
-    downloaded_hashes = set()  # Set to store unique hashes of downloaded images
+            img_tags = soup.find_all('img')
+            print(f"Found {len(img_tags)} image tags.")
+            
+            counter = 1
+            for img in img_tags:
+                if counter > media_count:
+                    print(f"Reached media count limit for listing {car_id}. Moving to next listing.")
+                    break
 
-    target_directory = os.path.join(target_directory, model_code)
-    os.makedirs(target_directory, exist_ok=True)
-
-    while downloaded_images < max_images:
-        current_url = f"{base_url}&page={page}"
-        print(f"Fetching URL: {current_url}")
-        search_page_response = requests.get(current_url, timeout=5)
-        if search_page_response.status_code == 200:
-            search_page_soup = BeautifulSoup(search_page_response.content, 'html.parser')
-            listing_links = [urljoin(current_url, a['href']) for a in search_page_soup.select('a.vehicle-card-link[href]')]
-            for listing_url in listing_links:
-                listing_id = listing_url.split('/')[-2]
-                # Check if any image for this listing already exists
-                existing_images = [img for img in os.listdir(target_directory) if img.startswith(listing_id)]
-                if existing_images:
-                    print(f"Images for listing {listing_id} already exist, skipping entire listing.")
-                    continue  # Skip to the next listing
-
-                print(f"Accessing listing: {listing_url}")
-                image_urls = get_image_urls(listing_url, proxies)
-                for img_url in image_urls:
+                img_url = img.get('src')
+                if img_url and img_url.startswith('http'):
                     try:
-                        img_response = requests.get(img_url, timeout=5)
-                        img_response.raise_for_status()
-                        image_hash = get_image_hash(img_response.content)
-                        if image_hash in downloaded_hashes:
-                            print(f"Duplicate image detected by hash, skipping: {img_url}")
-                            continue  # Skip this image
-                        image_name = f"{listing_id}_{len(existing_images) + 1}.jpg"
-                        image_path = os.path.join(target_directory, image_name)
-                        with open(image_path, 'wb') as f:
-                            f.write(img_response.content)
-                        downloaded_images += 1
-                        downloaded_hashes.add(image_hash)
-                        existing_images.append(image_name)  # Update the list to reflect the newly downloaded image
-                        print(f"Downloaded {image_name}")
-                        if downloaded_images >= max_images:
-                            break
-                    except RequestException as e:
-                        print(f"Failed to download image: {e}")
-        else:
-            print(f"Failed to fetch search page: {current_url}")
-        page += 1
-        if downloaded_images >= max_images:
+                        img_data = requests.get(img_url, timeout=10).content
+                        img_filename = os.path.join(save_directory, f'{car_id}_{counter}.jpg')
+                        with open(img_filename, 'wb') as handler:
+                            handler.write(img_data)
+                        print(f"Downloaded {img_filename}")
+                        counter += 1
+                        image_count += 1
+
+                        # Introduce a random delay between 0.5 and 1 second
+                        time.sleep(random.uniform(0.5, 1.0))
+                    except Exception as e:
+                        print(f"Failed to download image {counter} from listing {car_id}: {e}")
+                else:
+                    print(f"Skipping image {counter} from listing {car_id}: Invalid URL or not an HTTP link")
+            
+            print(f"Downloaded {counter-1} images from listing {car_id}")
+            return image_count
+
+        # If the proxy fails, remove it from the list and switch to a new one
+        print(f"Removing failed proxy {proxy} after {attempt+1} attempts.")
+        proxies.remove(proxy)
+        if not proxies:
+            print("No more proxies available. Exiting.")
+            return image_count
+        proxy_cycle = itertools.cycle(proxies)  # Reset the cycle to avoid stale iterator
+    
+    # If all retries with all proxies fail, skip the listing
+    print(f"Failed to fetch listing {car_id} after {max_retries} attempts. Skipping.")
+    return image_count
+
+def rotate_proxies(proxies, image_count):
+    if image_count >= 500:
+        print(f"Rotating proxy after downloading {image_count} images.")
+        return itertools.cycle(proxies), 0
+    return itertools.cycle(proxies), image_count
+
+def update_url_with_page(url, page_number):
+    """Update the given URL with the specified page number."""
+    parsed_url = urlparse(url)
+    query_params = parse_qs(parsed_url.query)
+    query_params['page'] = [str(page_number)]  # Set the page parameter
+    new_query_string = urlencode(query_params, doseq=True)
+    new_url = urlunparse(parsed_url._replace(query=new_query_string))
+    return new_url
+
+def main():
+    # Variable for the car type, which will be used to create the subfolder
+    car_type = 'w204'  # Change this value for different car types (e.g., 'w205', 'w204', etc.)
+    
+    base_url = "https://www.cars.com/shopping/results/?dealer_id=&door_counts[]=4&include_shippable=true&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=list_price&stock_type=all&trims[]=mercedes_benz-c_class-c_300&trims[]=mercedes_benz-c_class-c_300_4matic&year_max=&year_min=2022&zip=91331"
+
+    # Define the save directory, including the car type subfolder
+    base_directory = os.path.dirname(os.path.abspath(__file__))  # Base directory where the script is located
+    save_directory = os.path.join(base_directory, car_type)  # Subfolder for the car type
+    os.makedirs(save_directory, exist_ok=True)
+
+    proxies = get_proxies()  # Load proxies from file
+    proxy_cycle = itertools.cycle(proxies)
+    
+    # Start with a random proxy
+    random_start = random.randint(0, len(proxies) - 1)
+    proxy = proxies[random_start]
+
+    image_count = 0
+
+    page = 1
+    while True:
+        filter_url = update_url_with_page(base_url, page)
+        listings = get_listings(filter_url, proxies, proxy_cycle)
+        print(f"Found {len(listings)} listings on page {page}.")
+
+        if not listings:
+            print(f"No more listings found on page {page}. Stopping scraper.")
             break
 
-    print(f'Total images downloaded: {downloaded_images}')
+        for listing in listings:
+            image_count = download_images(listing, save_directory, proxies, proxy_cycle, image_count)
+
+            # Rotate proxies if the download count exceeds 500
+            proxy_cycle, image_count = rotate_proxies(proxies, image_count)
+
+        page += 1  # Move to the next page
 
 if __name__ == "__main__":
-    print("Starting the scraper")
-    base_url = 'https://www.cars.com/shopping/results/?dealer_id=&door_counts[]=4&include_shippable=true&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=list_price_desc&stock_type=all&trims[]=mercedes_benz-c_class-c_250&trims[]=mercedes_benz-c_class-c_250_luxury&trims[]=mercedes_benz-c_class-c_250_sport&trims[]=mercedes_benz-c_class-c_300&trims[]=mercedes_benz-c_class-c_300_4matic&trims[]=mercedes_benz-c_class-c_300_4matic_luxury&trims[]=mercedes_benz-c_class-c_300_4matic_sport&trims[]=mercedes_benz-c_class-c_300_sport&trims[]=mercedes_benz-c_class-c_350&year_max=2014&year_min=2007&zip=91331'
-    model_code = 'W204'
-    target_directory = 'C:\\Users\\joshu\\OneDrive\\Desktop\\Car.com-Image-Scraper'
-    proxies = load_proxies_from_file('http_proxies.txt')
-    scrape_images(base_url, model_code, target_directory, proxies)
+    main()
