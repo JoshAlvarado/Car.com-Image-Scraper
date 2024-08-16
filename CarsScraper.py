@@ -71,7 +71,7 @@ def download_images(url, save_directory, proxies, proxy_cycle, image_count):
                 print(f"Media count for listing {car_id}: {media_count}")
                 
                 # Skip listing if media count is 3 or below
-                if media_count <= 3:
+                if media_count <= 5:
                     print(f"Skipping listing {car_id} due to low media count ({media_count} images).")
                     return image_count
             else:
@@ -101,7 +101,7 @@ def download_images(url, save_directory, proxies, proxy_cycle, image_count):
                         image_count += 1
 
                         # Introduce a random delay between 0.5 and 1 second
-                        time.sleep(random.uniform(0.5, 1.0))
+                        time.sleep(random.uniform(0.1, .2))
                     except Exception as e:
                         print(f"Failed to download image {counter} from listing {car_id}: {e}")
                 else:
@@ -123,7 +123,7 @@ def download_images(url, save_directory, proxies, proxy_cycle, image_count):
     return image_count
 
 def rotate_proxies(proxies, image_count):
-    if image_count >= 500:
+    if image_count >= 120:
         print(f"Rotating proxy after downloading {image_count} images.")
         return itertools.cycle(proxies), 0
     return itertools.cycle(proxies), image_count
