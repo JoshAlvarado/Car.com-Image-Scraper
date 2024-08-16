@@ -71,16 +71,18 @@ def download_images(url, save_directory, proxies, proxy_cycle, image_count):
                 print(f"Media count for listing {car_id}: {media_count}")
                 
                 # Skip listing if media count is 3 or below
-                if (media_count is None) or media_count <= 5:
+                if media_count <= 3:
                     print(f"Skipping listing {car_id} due to low media count ({media_count} images).")
                     return image_count
             else:
                 print(f"Couldn't find media count for listing {car_id}. Skipping.")
                 return image_count
 
+            # Filter out the headshot images
             img_tags = soup.find_all('img')
-            print(f"Found {len(img_tags)} image tags.")
-            
+            img_tags = [img for img in img_tags if 'sds-headshot employee-image' not in img.get('class', [])]
+            print(f"Found {len(img_tags)} valid image tags after filtering.")
+
             counter = 1
             for img in img_tags:
                 if counter > media_count:
@@ -99,7 +101,7 @@ def download_images(url, save_directory, proxies, proxy_cycle, image_count):
                         image_count += 1
 
                         # Introduce a random delay between 0.5 and 1 second
-                        time.sleep(random.uniform(0.1, .3))
+                        time.sleep(random.uniform(0.5, 1.0))
                     except Exception as e:
                         print(f"Failed to download image {counter} from listing {car_id}: {e}")
                 else:
@@ -121,7 +123,7 @@ def download_images(url, save_directory, proxies, proxy_cycle, image_count):
     return image_count
 
 def rotate_proxies(proxies, image_count):
-    if image_count >= 120:
+    if image_count >= 500:
         print(f"Rotating proxy after downloading {image_count} images.")
         return itertools.cycle(proxies), 0
     return itertools.cycle(proxies), image_count
@@ -137,9 +139,9 @@ def update_url_with_page(url, page_number):
 
 def main():
     # Variable for the car type, which will be used to create the subfolder
-    car_type = 'L34'  # Change this value for different car types (e.g., 'w205', 'w204', etc.)
+    car_type = 'w204'  # Change this value for different car types (e.g., 'w205', 'w204', etc.)
     
-    base_url = "https://www.cars.com/shopping/results/?clean_title=true&dealer_id=&include_shippable=true&keyword=&list_price_max=&list_price_min=&makes[]=nissan&maximum_distance=all&mileage_max=&models[]=nissan-altima&monthly_payment=&only_with_photos=true&page=1&page_size=100&sort=list_price_desc&stock_type=all&year_max=&year_min=2019&zip=91331"
+    base_url = "https://www.cars.com/shopping/results/?dealer_id=&door_counts[]=4&include_shippable=true&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=list_price&stock_type=all&trims[]=mercedes_benz-c_class-c_300&trims[]=mercedes_benz-c_class-c_300_4matic&year_max=&year_min=2022&zip=91331"
 
     # Define the save directory, including the car type subfolder
     base_directory = os.path.dirname(os.path.abspath(__file__))  # Base directory where the script is located
