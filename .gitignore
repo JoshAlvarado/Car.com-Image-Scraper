@@ -6,3 +6,8 @@ httpworkingproxies.txt
 *.jpg
 yolov5x.pt
 http_proxies.txt
+*.zip
+*.txt
+*.txt
+workingproxy.txt
+http_proxies.txt

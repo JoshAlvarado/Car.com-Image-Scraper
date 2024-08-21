@@ -71,7 +71,7 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device).eval()
 
-    folder_path = r"W204"
+    folder_path = r"l34"
     hashes = set()
     hash_func = imagehash.average_hash
 
