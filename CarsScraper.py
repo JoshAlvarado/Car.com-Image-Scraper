@@ -141,7 +141,7 @@ def main():
     # Variable for the car type, which will be used to create the subfolder
     car_type = 'w205updated'  # Change this value for different car types (e.g., 'w205', 'w204', etc.)
     
-    base_url = "https://www.cars.com/shopping/results/?clean_title=true&dealer_id=&door_counts[]=4&include_shippable=true&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=best_deal&stock_type=all&trims[]=mercedes_benz-c_class-c_300&year_max=2021&year_min=2015&zip=91331"
+    base_url = "https://www.cars.com/shopping/results/?clean_title=true&dealer_id=&door_counts[]=4&include_shippable=true&keyword=&list_price_max=&list_price_min=&makes[]=mercedes_benz&maximum_distance=all&mileage_max=&models[]=mercedes_benz-c_class&monthly_payment=&only_with_photos=true&page_size=100&sort=list_price_desc&stock_type=all&trims[]=mercedes_benz-c_class-c_300&year_max=2021&year_min=2015&zip=91331"
 
     # Define the save directory, including the car type subfolder
     base_directory = os.path.dirname(os.path.abspath(__file__))  # Base directory where the script is located

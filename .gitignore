@@ -11,3 +11,5 @@ http_proxies.txt
 *.txt
 workingproxy.txt
 http_proxies.txt
+*.txt
+workingproxy.txt
