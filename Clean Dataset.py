@@ -3,6 +3,10 @@ from PIL import Image, UnidentifiedImageError, ImageFile
 import os
 import imagehash
 import time
+import warnings
+
+# Suppress specific FutureWarnings from the YOLOv5 model
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
@@ -12,7 +16,7 @@ def load_image_from_file(file_path):
         img = Image.open(file_path)
         img.load()  # Ensure the image is fully loaded
         return img, img.size
-    except (UnidentifiedImageError, OSError) as e:
+    except (UnidentifiedImageError, OSError):
         os.remove(file_path)
         return None, (0, 0)
 
@@ -39,7 +43,8 @@ def process_image(img_path, model, hashes, hash_func, conf_threshold, bbox_ratio
         return False, "duplicate"
 
     # Perform detection
-    results = model(img)
+    with torch.amp.autocast(device_type='cuda' if torch.cuda.is_available() else 'cpu'):
+        results = model(img)
 
     largest_bbox_area = 0
     largest_conf = 0
@@ -71,7 +76,7 @@ def main():
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model.to(device).eval()
 
-    folder_path = r"l34"
+    folder_path = r"w205updated"
     hashes = set()
     hash_func = imagehash.average_hash
 
@@ -82,27 +87,13 @@ def main():
 
     image_files = [f for f in os.listdir(folder_path) if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
     total_images = len(image_files)
-    print(f"Total number of images in the folder: {total_images}")
 
     processed_images = 0
-    kept_images = 0
-    duplicate_images = 0
-    unloadable_images = 0
-    not_criteria_images = 0
 
     for filename in image_files:
         img_path = os.path.join(folder_path, filename)
-        result, reason = process_image(img_path, model, hashes, hash_func, conf_threshold, bbox_ratio_min, bbox_ratio_max)
+        process_image(img_path, model, hashes, hash_func, conf_threshold, bbox_ratio_min, bbox_ratio_max)
         processed_images += 1
-
-        if reason == "kept":
-            kept_images += 1
-        elif reason == "duplicate":
-            duplicate_images += 1
-        elif reason == "unloadable":
-            unloadable_images += 1
-        elif reason == "not_criteria":
-            not_criteria_images += 1
 
         if processed_images % 1000 == 0:
             percentage_done = (processed_images / total_images) * 100
@@ -111,12 +102,8 @@ def main():
     end_time = time.time()
     total_time = end_time - start_time
 
-    print(f"Total time taken: {total_time:.2f} seconds")
-    print(f"Total images processed: {processed_images}")
-    print(f"Images kept: {kept_images}")
-    print(f"Duplicate images deleted: {duplicate_images}")
-    print(f"Unloadable images deleted: {unloadable_images}")
-    print(f"Images deleted for not meeting criteria: {not_criteria_images}")
+    # Final print statement for completion
+    print(f"Processing complete. Total time taken: {total_time:.2f} seconds")
 
 if __name__ == "__main__":
     main()
